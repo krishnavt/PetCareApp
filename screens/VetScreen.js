@@ -1,115 +1,152 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
-import { Calendar, Phone, MapPin, Clock } from 'lucide-react-native';
-import { usePetContext } from '../context/PetContext';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
+import { MapPin, Clock, Star, Search, Filter, Phone } from 'lucide-react-native';
+
+// Static clinic data
+const clinicsData = [
+  {
+    id: 1,
+    name: "Healthy Paws SF",
+    location: {
+      city: "San Francisco",
+      state: "CA",
+      address: "123 Pet Care Lane",
+      zip: "94105",
+    },
+    rating: 4.8,
+    waitTime: "15 mins",
+    services: ["General Care", "Surgery", "Dental"],
+    doctors: 5,
+    isOpen: true
+  },
+  {
+    id: 2,
+    name: "Manhattan Pet Hospital",
+    location: {
+      city: "New York",
+      state: "NY",
+      address: "456 Vet Street",
+      zip: "10001",
+    },
+    rating: 4.9,
+    waitTime: "20 mins",
+    services: ["Emergency Care", "General Care", "Dental"],
+    doctors: 8,
+    isOpen: true
+  },
+  {
+    id: 3,
+    name: "Chicago Pet Wellness",
+    location: {
+      city: "Chicago",
+      state: "IL",
+      address: "789 Animal Ave",
+      zip: "60601",
+    },
+    rating: 4.7,
+    waitTime: "10 mins",
+    services: ["General Care", "Vaccination", "Grooming"],
+    doctors: 4,
+    isOpen: true
+  }
+];
 
 export function VetScreen() {
-  const { pets, selectedPet, addVetVisit } = usePetContext();
-  const currentPet = pets[selectedPet];
-  const [isScheduling, setIsScheduling] = useState(false);
-  const [newVisit, setNewVisit] = useState({
-    date: '',
-    reason: '',
-    notes: '',
-  });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredClinics, setFilteredClinics] = useState(clinicsData);
 
-  const vetInfo = {
-    name: 'Dr. Sarah Wilson',
-    clinic: 'Healthy Paws Veterinary',
-    phone: '(555) 123-4567',
-    address: '123 Pet Care Lane',
-    hours: 'Mon-Fri 8am-6pm',
+  const handleSearch = (text) => {
+    setSearchQuery(text);
+    const filtered = clinicsData.filter(clinic => 
+      clinic.name.toLowerCase().includes(text.toLowerCase()) ||
+      clinic.location.city.toLowerCase().includes(text.toLowerCase())
+    );
+    setFilteredClinics(filtered);
   };
 
-  const handleAddVisit = () => {
-    if (newVisit.date && newVisit.reason) {
-      addVetVisit(currentPet.id, newVisit);
-      setNewVisit({ date: '', reason: '', notes: '' });
-      setIsScheduling(false);
-    }
+  const renderStars = (rating) => {
+    return [...Array(5)].map((_, index) => (
+      <Star 
+        key={index}
+        size={16}
+        color={index < Math.floor(rating) ? '#fbbf24' : '#e5e7eb'}
+        fill={index < Math.floor(rating) ? '#fbbf24' : 'none'}
+      />
+    ));
   };
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.vetName}>{vetInfo.name}</Text>
-        <Text style={styles.clinicName}>{vetInfo.clinic}</Text>
-        
-        <View style={styles.infoRow}>
-          <Phone size={20} color="#6b7280" />
-          <Text style={styles.infoText}>{vetInfo.phone}</Text>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBar}>
+          <Search size={20} color="#6b7280" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search clinics..."
+            value={searchQuery}
+            onChangeText={handleSearch}
+          />
         </View>
-        
-        <View style={styles.infoRow}>
-          <MapPin size={20} color="#6b7280" />
-          <Text style={styles.infoText}>{vetInfo.address}</Text>
-        </View>
-        
-        <View style={styles.infoRow}>
-          <Clock size={20} color="#6b7280" />
-          <Text style={styles.infoText}>{vetInfo.hours}</Text>
-        </View>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Upcoming Visits</Text>
-        {currentPet.vetVisits.map(visit => (
-          <View key={visit.id} style={styles.visitItem}>
-            <View style={styles.visitHeader}>
-              <Calendar size={20} color="#3b82f6" />
-              <Text style={styles.visitDate}>{visit.date}</Text>
-            </View>
-            <Text style={styles.visitReason}>{visit.reason}</Text>
-            {visit.notes && <Text style={styles.visitNotes}>{visit.notes}</Text>}
-          </View>
-        ))}
-      </View>
-
-      {!isScheduling ? (
-        <TouchableOpacity
-          style={styles.scheduleButton}
-          onPress={() => setIsScheduling(true)}
-        >
-          <Text style={styles.scheduleButtonText}>Schedule New Visit</Text>
+        <TouchableOpacity style={styles.filterButton}>
+          <Filter size={20} color="#3b82f6" />
         </TouchableOpacity>
-      ) : (
-        <View style={styles.scheduleForm}>
-          <Text style={styles.formTitle}>Schedule Visit</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Date (YYYY-MM-DD)"
-            value={newVisit.date}
-            onChangeText={(text) => setNewVisit({ ...newVisit, date: text })}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Reason for Visit"
-            value={newVisit.reason}
-            onChangeText={(text) => setNewVisit({ ...newVisit, reason: text })}
-          />
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Additional Notes"
-            value={newVisit.notes}
-            onChangeText={(text) => setNewVisit({ ...newVisit, notes: text })}
-            multiline
-          />
-          <View style={styles.formButtons}>
-            <TouchableOpacity 
-              style={[styles.formButton, styles.cancelButton]}
-              onPress={() => setIsScheduling(false)}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+      </View>
+
+      {/* Clinics List */}
+      {filteredClinics.map(clinic => (
+        <View key={clinic.id} style={styles.clinicCard}>
+          <View style={styles.clinicHeader}>
+            <Text style={styles.clinicName}>{clinic.name}</Text>
+            {clinic.isOpen && (
+              <View style={styles.openBadge}>
+                <Text style={styles.openText}>Open</Text>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.locationContainer}>
+            <MapPin size={16} color="#6b7280" />
+            <Text style={styles.locationText}>
+              {clinic.location.address}, {clinic.location.city}, {clinic.location.state}
+            </Text>
+          </View>
+
+          <View style={styles.ratingContainer}>
+            <View style={styles.stars}>
+              {renderStars(clinic.rating)}
+              <Text style={styles.ratingText}>{clinic.rating}</Text>
+            </View>
+            <View style={styles.waitTime}>
+              <Clock size={16} color="#6b7280" />
+              <Text style={styles.waitTimeText}>Wait: {clinic.waitTime}</Text>
+            </View>
+          </View>
+
+          <View style={styles.servicesContainer}>
+            {clinic.services.map((service, index) => (
+              <View key={index} style={styles.serviceBadge}>
+                <Text style={styles.serviceText}>{service}</Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.doctorsInfo}>
+            <Text style={styles.doctorsText}>
+              {clinic.doctors} Veterinarians Available
+            </Text>
+          </View>
+
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.appointmentButton}>
+              <Text style={styles.buttonText}>Book Appointment</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.formButton, styles.saveButton]}
-              onPress={handleAddVisit}
-            >
-              <Text style={styles.saveButtonText}>Schedule</Text>
+            <TouchableOpacity style={styles.callButton}>
+              <Phone size={20} color="#3b82f6" />
             </TouchableOpacity>
           </View>
         </View>
-      )}
+      ))}
     </ScrollView>
   );
 }
@@ -120,7 +157,31 @@ const styles = StyleSheet.create({
     backgroundColor: '#f3f4f6',
     padding: 16,
   },
-  card: {
+  searchContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 12,
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 16,
+  },
+  filterButton: {
+    backgroundColor: 'white',
+    padding: 12,
+    borderRadius: 12,
+    justifyContent: 'center',
+  },
+  clinicCard: {
     backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
@@ -131,121 +192,102 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  vetName: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  clinicName: {
-    fontSize: 16,
-    color: '#4b5563',
-    marginBottom: 16,
-  },
-  infoRow: {
+  clinicHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  infoText: {
-    marginLeft: 8,
-    fontSize: 16,
-    color: '#4b5563',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 16,
-  },
-  visitItem: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    paddingVertical: 12,
-  },
-  visitHeader: {
-    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  visitDate: {
-    marginLeft: 8,
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#111827',
-  },
-  visitReason: {
-    fontSize: 16,
-    color: '#4b5563',
-    marginBottom: 4,
-  },
-  visitNotes: {
-    fontSize: 14,
-    color: '#6b7280',
-    fontStyle: 'italic',
-  },
-  scheduleButton: {
-    backgroundColor: '#3b82f6',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  scheduleButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  scheduleForm: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  formTitle: {
+  clinicName: {
     fontSize: 18,
     fontWeight: '600',
     color: '#111827',
-    marginBottom: 16,
   },
-  input: {
-    backgroundColor: '#f9fafb',
-    borderRadius: 8,
-    padding: 12,
+  openBadge: {
+    backgroundColor: '#10b981',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  openText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 12,
-    fontSize: 16,
   },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
+  locationText: {
+    marginLeft: 8,
+    color: '#6b7280',
+    flex: 1,
   },
-  formButtons: {
+  ratingContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  formButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
+  stars: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  cancelButton: {
-    backgroundColor: '#f3f4f6',
+  ratingText: {
+    marginLeft: 4,
+    color: '#6b7280',
+  },
+  waitTime: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  waitTimeText: {
+    marginLeft: 4,
+    color: '#6b7280',
+  },
+  servicesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 12,
+  },
+  serviceBadge: {
+    backgroundColor: '#e0f2fe',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  serviceText: {
+    color: '#3b82f6',
+    fontSize: 12,
+  },
+  doctorsInfo: {
+    marginBottom: 12,
+  },
+  doctorsText: {
+    color: '#6b7280',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  appointmentButton: {
+    flex: 1,
+    backgroundColor: '#3b82f6',
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
     marginRight: 8,
   },
-  saveButton: {
-    backgroundColor: '#3b82f6',
-    marginLeft: 8,
+  callButton: {
+    backgroundColor: '#f3f4f6',
+    padding: 12,
+    borderRadius: 8,
   },
-  cancelButtonText: {
-    color: '#4b5563',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  saveButtonText: {
+  buttonText: {
     color: 'white',
-    fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });
